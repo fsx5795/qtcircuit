@@ -2,6 +2,7 @@
 #include <QContextMenuEvent>
 #include "graphicsscene.h"
 #include "graphicsview.h"
+
 GraphicsView::GraphicsView(QWidget *parent) : QGraphicsView(parent)
 {
     this->setScene(new GraphicsScene());
@@ -9,8 +10,10 @@ GraphicsView::GraphicsView(QWidget *parent) : QGraphicsView(parent)
 void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
 {
     QMenu menu;
-    QAction *addAction = menu.addAction("Add RectItem");
-    connect(addAction, &QAction::triggered, this, [=, this](void){ qobject_cast<GraphicsScene*>(this->scene())->addRectItem(QRect(event->pos(), QSize(100, 50))); });
+    QAction *addRect = menu.addAction("Add RectItem");
+    QAction *addLine = menu.addAction("Add LineItem");
+    connect(addRect, &QAction::triggered, this, [=, this]{ static_cast<GraphicsScene*>(this->scene())->addRectItem(event->pos()); });
+    connect(addLine, &QAction::triggered, this, [this]{ static_cast<GraphicsScene*>(this->scene())->drawLine = true; });
     menu.exec(event->globalPos());
     return;
 }

@@ -1,12 +1,11 @@
-#include <QDebug>
-#include <QGraphicsRectItem>
+#include <QGraphicsView>
 #include "graphicsscene.h"
-void GraphicsScene::addRectItem(const QRect &rect)
+
+void GraphicsScene::addRectItem(const QPoint &pos)
 {
-    QGraphicsRectItem *rectItem = new QGraphicsRectItem(rect);
-    rectItem->setFlags(QGraphicsItem::ItemIsSelectable | QGraphicsItem::ItemIsMovable);
-    rectItem->setBrush(Qt::red);
-    this->addItem(rectItem);
+    Component *com = new Component(pos);
+    this->addItem(com);
+    /*
     QList<QGraphicsItem*> items = this->items();
     for (int i{0}; i < items.count(); ++i) {
         QGraphicsItem *curItem = items.at(i);
@@ -17,6 +16,7 @@ void GraphicsScene::addRectItem(const QRect &rect)
             break;
         }
     }
+    */
     return;
 }
 //新建立的矩形图元与上一个个矩形图元之间连线
@@ -29,14 +29,14 @@ void GraphicsScene::new_rect_connect_line(QGraphicsRectItem *startRectItem, QGra
     module.startRect = startRectItem;
     module.endRect = endRectItem;
     //连线
-    vector<QLineF> lineFvec = this->rect_connect_line(startRectItem, endRectItem);
+    std::vector<QLineF> lineFvec = this->rect_connect_line(startRectItem, endRectItem);
     //将连线添加到结构体
-    this->change_lines(&module.lineList, lineFvec);
+    //this->change_lines(&module.lineList, lineFvec);
     this->moduleList.push_back(module);
     return;
 }
 //两个矩形图元之间连线
-vector<QLineF> GraphicsScene::rect_connect_line(QGraphicsRectItem *startRectItem, QGraphicsRectItem *endRectItem)
+std::vector<QLineF> GraphicsScene::rect_connect_line(QGraphicsRectItem *startRectItem, QGraphicsRectItem *endRectItem)
 {
     QRectF itemRect1 = startRectItem->sceneBoundingRect();
     QRectF itemRect2 = endRectItem->sceneBoundingRect();
@@ -44,7 +44,7 @@ vector<QLineF> GraphicsScene::rect_connect_line(QGraphicsRectItem *startRectItem
     qreal startY = itemRect1.topRight().y() + itemRect1.height() / 2;
     qreal endX = itemRect2.x() - 1;
     qreal endY = itemRect2.topRight().y() + itemRect2.height() / 2;
-    vector<QLineF> lineFvec;
+    std::vector<QLineF> lineFvec;
     if (startY == endY) {
         if (startX < endX)
            lineFvec.push_back(QLineF(startX, startY, endX, endY));
@@ -71,7 +71,7 @@ vector<QLineF> GraphicsScene::rect_connect_line(QGraphicsRectItem *startRectItem
     return lineFvec;
 }
 //更新连线的线段
-void GraphicsScene::change_lines(list<QGraphicsLineItem*> *lineList, const vector<QLineF> &lineFvec)
+void GraphicsScene::change_lines(std::list<QGraphicsLineItem*> *lineList, const std::vector<QLineF> &lineFvec)
 {
     //删除多余的线段
     this->delete_lines(lineList, lineFvec.size());
@@ -93,13 +93,13 @@ void GraphicsScene::change_lines(list<QGraphicsLineItem*> *lineList, const vecto
 void GraphicsScene::change_lines(GraphicsModule &module)
 {
     //创建新的连线线段
-    vector<QLineF> lineFvec = this->rect_connect_line(module.startRect, module.endRect);
+    std::vector<QLineF> lineFvec = this->rect_connect_line(module.startRect, module.endRect);
     //更新原有线段为新的连线线段
-    this->change_lines(&module.lineList, lineFvec);
+    //this->change_lines(&module.lineList, lineFvec);
     return;
 }
 //删除多余的线段
-void GraphicsScene::delete_lines(list<QGraphicsLineItem*> *lineList, int count)
+void GraphicsScene::delete_lines(std::list<QGraphicsLineItem*> *lineList, int count)
 {
     //如果原有线段超过新的线段数量则删除多出来的线段
     while (lineList->size() > count) {
@@ -112,26 +112,167 @@ void GraphicsScene::delete_lines(list<QGraphicsLineItem*> *lineList, int count)
     return;
 }
 //添加缺少的线段
-void GraphicsScene::create_line(list<QGraphicsLineItem*> *lineList, const QLineF &lineF)
+void GraphicsScene::create_line(std::list<QGraphicsLineItem*> *lineList, const QLineF &lineF)
 {
     QGraphicsLineItem *line = new QGraphicsLineItem(lineF);
     this->addItem(line);
     lineList->push_back(line);
     return;
 }
-void GraphicsScene::mouseMoveEvent(QGraphicsSceneMouseEvent *mouseEvent)
+void GraphicsScene::mousePressEvent(QGraphicsSceneMouseEvent *mouseEvent)
 {
-    for (auto &item : this->items()) {
-        if (item->type() == QGraphicsRectItem::Type && item->isSelected()) {
-            for (auto &module : this->moduleList) {
-                if (module.startRect == item || module.endRect == item) {
-                    //更新连线
-                    this->change_lines(module);
+    if (this->drawLine) {
+        QPointF mousePointF = mouseEvent->scenePos();
+        if (this->drawEndLine) {
+            std::tuple<std::array<Component*, 2>, std::array<Direct, 2>, std::array<QGraphicsLineItem*, 3>> &graphicsModule = this->graphicsMoudules.back();
+			for (auto &item : this->items()) {
+                if (item->type() == QGraphicsItemGroup::Type && std::get<0>(graphicsModule).at(0) != item) {
+                    std::array<std::tuple<QPointF, Direct>, 2> pd = static_cast<Component*>(item)->points();
+                    if (sqrt((std::get<0>(pd.at(0)).x() - mousePointF.x()) + (std::get<0>(pd.at(0)).y() - mousePointF.y())) <= 10) {
+                        switch (std::get<1>(graphicsModule).at(0)) {
+                            case Direct::Left:
+                            case Direct::Right:
+                                this->leftRightHorizontal(std::get<1>(graphicsModule).at(0), std::get<0>(pd.at(0)));
+                                break;
+                            default:
+                                break;
+                        }
+                        this->drawLine = false;
+                        this->drawEndLine = false;
+                        this->views().at(0)->setMouseTracking(false);
+                    } else if(sqrt((std::get<0>(pd.at(1)).x() - mousePointF.x()) + (std::get<0>(pd.at(1)).y() - mousePointF.y())) <= 10) {
+                        switch (std::get<1>(graphicsModule).at(0)) {
+                            case Direct::Left:
+                            case Direct::Right:
+                                this->leftRightHorizontal(std::get<1>(graphicsModule).at(0), std::get<0>(pd.at(1)));
+                                break;
+                            default:
+                                break;
+                        }
+                        this->drawLine = false;
+                        this->drawEndLine = false;
+                        this->views().at(0)->setMouseTracking(false);
+                    }
+                }
+            }
+        } else {
+			for (auto &item : this->items()) {
+                if (item->type() == QGraphicsItemGroup::Type) {
+                    std::tuple<std::array<Component*, 2>, std::array<Direct, 2>, std::array<QGraphicsLineItem*, 3>> graphicsModule;
+                    std::get<2>(graphicsModule).at(0) = nullptr;
+                    std::get<2>(graphicsModule).at(1) = nullptr;
+                    std::get<2>(graphicsModule).at(2) = nullptr;
+                    std::array<std::tuple<QPointF, Direct>, 2> pd = static_cast<Component*>(item)->points();
+                    if (sqrt((std::get<0>(pd.at(0)).x() - mouseEvent->scenePos().x()) + (std::get<0>(pd.at(0)).y() - mouseEvent->scenePos().y())) <= 10) {
+                        std::get<2>(graphicsModule).at(0) = new QGraphicsLineItem(QLineF(std::get<0>(pd.at(0)), mouseEvent->scenePos()));
+                        std::get<1>(graphicsModule).at(0) = std::get<1>(pd.at(0));
+                    } else if(sqrt((std::get<0>(pd.at(1)).x() - mouseEvent->scenePos().x()) + (std::get<0>(pd.at(1)).y() - mouseEvent->scenePos().y())) <= 10) {
+                        std::get<2>(graphicsModule).at(0) = new QGraphicsLineItem(QLineF(std::get<0>(pd.at(1)), mouseEvent->scenePos()));
+                        std::get<1>(graphicsModule).at(0) = std::get<1>(pd.at(1));
+                    }
+                    if (std::get<2>(graphicsModule).at(0) != nullptr) {
+                        this->graphicsMoudules.push_back(graphicsModule);
+                        this->addItem(std::get<2>(graphicsModule).at(0));
+                        this->drawEndLine = true;
+                        this->views().at(0)->setMouseTracking(true);
+                    }
                 }
             }
         }
     }
-    QGraphicsScene::mouseMoveEvent(mouseEvent);
-    return;
+    return QGraphicsScene::mousePressEvent(mouseEvent);
 }
-GraphicsScene::~GraphicsScene(void){}
+
+void GraphicsScene::mouseMoveEvent(QGraphicsSceneMouseEvent *mouseEvent)
+{
+    if (this->drawLine && this->drawEndLine) {
+        std::tuple<std::array<Component*, 2>, std::array<Direct, 2>, std::array<QGraphicsLineItem*, 3>> &graphicsModule = this->graphicsMoudules.back();
+        switch (std::get<1>(graphicsModule).at(0)) {
+            case Direct::Left:
+            case Direct::Right:
+                this->leftRightHorizontal(std::get<1>(graphicsModule).at(0), mouseEvent->scenePos());
+                break;
+            default:
+                break;
+        }
+    } else {
+        qDebug() << "------------";
+    }
+    return QGraphicsScene::mouseMoveEvent(mouseEvent);
+}
+
+void GraphicsScene::leftRightHorizontal(Direct direct, const QPointF &mousePointF) noexcept
+{
+    std::tuple<std::array<Component*, 2>, std::array<Direct, 2>, std::array<QGraphicsLineItem*, 3>> &graphicsModule = this->graphicsMoudules.back();
+    QLineF frontLineF = std::get<2>(graphicsModule).at(0)->line();
+    Bear bear;
+    double midX;
+    switch (direct)
+    {
+    case Direct::Left:
+        bear = frontLineF.x1() > mousePointF.x() ? Bear::Positive : frontLineF.x1() < mousePointF.x() ? Bear::Reverse : Bear::Same, mousePointF;
+        midX = mousePointF.x() + abs(frontLineF.x1() - mousePointF.x()) / 2;
+        break;
+    case Direct::Right:
+        bear = frontLineF.x1() < mousePointF.x() ? Bear::Positive : frontLineF.x1() > mousePointF.x() ? Bear::Reverse : Bear::Same, mousePointF;
+        midX = mousePointF.x() - abs(frontLineF.x1() - mousePointF.x()) / 2;
+        break;
+    default:
+        break;
+    }
+    switch (bear) {
+        case Bear::Positive:
+            if (frontLineF.y1() != mousePointF.y()) {
+                std::get<2>(graphicsModule).at(0)->setLine(frontLineF.x1(), frontLineF.y1(), midX, frontLineF.y1());
+                if (std::get<2>(graphicsModule).at(1) == nullptr) {
+                    std::get<2>(graphicsModule).at(1) = new QGraphicsLineItem(midX, frontLineF.y1(), midX, mousePointF.y());
+                    this->addItem(std::get<2>(graphicsModule).at(1));
+                } else {
+                    std::get<2>(graphicsModule).at(1)->setLine(midX, frontLineF.y1(), midX, mousePointF.y());
+                }
+                if (std::get<2>(graphicsModule).at(2) == nullptr) {
+                    std::get<2>(graphicsModule).at(2) = new QGraphicsLineItem(midX, mousePointF.y(), mousePointF.x(), mousePointF.y());
+                    this->addItem(std::get<2>(graphicsModule).at(2));
+                } else {
+                    std::get<2>(graphicsModule).at(2)->setLine(midX, mousePointF.y(), mousePointF.x(), mousePointF.y());
+                }
+            } else {
+                std::get<2>(graphicsModule).at(0)->setLine(frontLineF.x1(), frontLineF.y1(), mousePointF.x(), frontLineF.y1());
+                for (int i{1}; i <= 2; ++i) {
+                    if (std::get<2>(graphicsModule).at(i) != nullptr) {
+                        this->removeItem(std::get<2>(graphicsModule).at(i));
+                        delete std::get<2>(graphicsModule).at(i);
+                        std::get<2>(graphicsModule).at(i) = nullptr;
+                    }
+                }
+            }
+            break;
+        case Bear::Reverse:
+            if (frontLineF.y1() != mousePointF.y()) {
+                std::get<2>(graphicsModule).at(0)->setLine(frontLineF.x1(), frontLineF.y1(), frontLineF.x1(), mousePointF.y());
+                if (std::get<2>(graphicsModule).at(1) == nullptr) {
+                    std::get<2>(graphicsModule).at(1) = new QGraphicsLineItem(frontLineF.x1(), mousePointF.y(), mousePointF.x(), mousePointF.y());
+                    this->addItem(std::get<2>(graphicsModule).at(1));
+                } else {
+                    std::get<2>(graphicsModule).at(1)->setLine(frontLineF.x1(), mousePointF.y(), mousePointF.x(), mousePointF.y());
+                }
+                if (std::get<2>(graphicsModule).at(2) != nullptr) {
+                    this->removeItem(std::get<2>(graphicsModule).at(2));
+                    delete std::get<2>(graphicsModule).at(2);
+                    std::get<2>(graphicsModule).at(2) = nullptr;
+                }
+            }
+            break;
+        case Bear::Same:
+            std::get<2>(graphicsModule).at(0)->setLine(frontLineF.x1(), frontLineF.y1(), mousePointF.x(), mousePointF.y());
+            for (int i{1}; i <= 2; ++i) {
+                if (std::get<2>(graphicsModule).at(i) != nullptr) {
+                    this->removeItem(std::get<2>(graphicsModule).at(i));
+                    delete std::get<2>(graphicsModule).at(i);
+                    std::get<2>(graphicsModule).at(i) = nullptr;
+                }
+            }
+            break;
+        }
+        return;
+    }
