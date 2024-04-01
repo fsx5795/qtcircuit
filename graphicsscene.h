@@ -47,6 +47,9 @@ private:
     //添加缺少的线段
     void create_line(std::list<QGraphicsLineItem*>*, const QLineF&);
     std::list<GraphicsModule> moduleList;
+    void targetBuck(bool, std::array<QGraphicsLineItem*, 3>&, const QPointF&) noexcept;
+    void targetMidX(std::array<QGraphicsLineItem*, 3>&, const QPointF&) noexcept;
+    void targetMidY(std::array<QGraphicsLineItem*, 3>&, const QPointF&) noexcept;
     void leftRightHorizontal(Direct, const QPointF&) noexcept;
     std::list<std::tuple<std::array<Component*, 2>, std::array<Direct, 2>, std::array<QGraphicsLineItem*, 3>>> graphicsMoudules;
     bool drawEndLine{false};

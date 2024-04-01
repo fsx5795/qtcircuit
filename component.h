@@ -17,6 +17,7 @@ public:
 	explicit Component(const QPoint&, QGraphicsItem *parent = nullptr);
 	//virtual QRectF boundingRect() const override;
 	std::array<std::tuple<QPointF, Direct>, 2> points() const noexcept;
+	bool hasLine{false};
 
 private:
 	QRectF boundRect;
