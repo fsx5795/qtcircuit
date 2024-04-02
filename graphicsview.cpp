@@ -13,7 +13,7 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
     QAction *addRect = menu.addAction("Add RectItem");
     QAction *addLine = menu.addAction("Add LineItem");
     connect(addRect, &QAction::triggered, this, [=, this]{ static_cast<GraphicsScene*>(this->scene())->addRectItem(event->pos()); });
-    connect(addLine, &QAction::triggered, this, [this]{ static_cast<GraphicsScene*>(this->scene())->drawLine = true; });
+    connect(addLine, &QAction::triggered, this, [this]{ static_cast<GraphicsScene*>(this->scene())->addLine = true; });
     menu.exec(event->globalPos());
     return;
 }

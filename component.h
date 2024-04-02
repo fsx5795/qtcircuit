@@ -2,6 +2,7 @@
 #define COMPONENT_H
 
 #include <QGraphicsItemGroup>
+#include <QGraphicsSceneContextMenuEvent>
 
 enum class Direct
 {
@@ -18,6 +19,9 @@ public:
 	//virtual QRectF boundingRect() const override;
 	std::array<std::tuple<QPointF, Direct>, 2> points() const noexcept;
 	bool hasLine{false};
+
+protected:
+    virtual void contextMenuEvent(QGraphicsSceneContextMenuEvent*) override;
 
 private:
 	QRectF boundRect;

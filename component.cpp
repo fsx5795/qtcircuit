@@ -1,3 +1,4 @@
+#include <QMenu>
 #include <QGraphicsRectItem>
 #include "component.h"
 
@@ -26,7 +27,14 @@ QRectF Component::boundingRect() const
 	return this->boundRect;
 }
 */
+void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
+{
+	QMenu menu;
+	QAction *rotatAction = menu.addAction("Rotation");
+	menu.exec(event->screenPos());
+	return QGraphicsItem::contextMenuEvent(event);
+}
 std::array<std::tuple<QPointF, Direct>, 2> Component::points() const noexcept
 {
-	return std::array<std::tuple<QPointF, Direct>, 2>{std::make_tuple(this->lines.at(0)->line().p1(), Direct::Left), std::make_tuple(this->lines.at(1)->line().p2(), Direct::Right)};
+	return std::array<std::tuple<QPointF, Direct>, 2>{std::make_tuple(this->mapToScene(this->lines.at(0)->line().p1()), Direct::Left), std::make_tuple(this->mapToScene(this->lines.at(1)->line().p2()), Direct::Right)};
 }
