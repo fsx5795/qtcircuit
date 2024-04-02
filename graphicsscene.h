@@ -2,35 +2,38 @@
 #define GRAPHICSSCENE_H
 
 #include <QGraphicsScene>
-using namespace std;
+#include <QGraphicsSceneMouseEvent>
+#include "component.h"
+
+enum class Bear
+{
+    Positive,
+    Reverse,
+    Same
+};
+
 class GraphicsScene : public QGraphicsScene
 {
-    struct GraphicsModule
-    {
-        QGraphicsRectItem *startRect;
-        list<QGraphicsLineItem*> lineList;
-        QGraphicsRectItem *endRect;
-    };
     Q_OBJECT
 public:
     using QGraphicsScene::QGraphicsScene;
-    void addRectItem(const QRect&);
-    virtual ~GraphicsScene(void);
+    void addRectItem(const QPoint&);
+    bool addLine{false};
+
 protected:
-    virtual void mouseMoveEvent(QGraphicsSceneMouseEvent*) Q_DECL_OVERRIDE;
+    virtual void mousePressEvent(QGraphicsSceneMouseEvent*) override;
+    virtual void mouseMoveEvent(QGraphicsSceneMouseEvent*) override;
+
 private:
-    //新建立的矩形图元与上一个个矩形图元之间连线
-    void new_rect_connect_line(QGraphicsRectItem*, QGraphicsRectItem*);
-    //两个矩形图元之间连线
-    vector<QLineF> rect_connect_line(QGraphicsRectItem*, QGraphicsRectItem*);
-    //更新连线的线段
-    void change_lines(list<QGraphicsLineItem*>*, const vector<QLineF>&);
-    void change_lines(GraphicsModule&);
-    //删除多余的线段
-    void delete_lines(list<QGraphicsLineItem*>*, int);
-    //添加缺少的线段
-    void create_line(list<QGraphicsLineItem*>*, const QLineF&);
-    list<GraphicsModule> moduleList;
+    bool drawEndLine(bool, const QPointF&) noexcept;
+    void targetBuck(bool, std::array<QGraphicsLineItem*, 3>&, const std::array<QPointF, 2>&) noexcept;
+    void targetMidX(std::array<QGraphicsLineItem*, 3>&, const std::array<QPointF, 2>&) noexcept;
+    void targetMidY(std::array<QGraphicsLineItem*, 3>&, const std::array<QPointF, 2>&) noexcept;
+    void leftRightHorizontal(Direct, const QPointF&) noexcept;
+    void updateLines(std::tuple<std::array<Component*, 2>, std::array<Direct, 2>, std::array<QGraphicsLineItem*, 3>>&, const std::array<std::tuple<QPointF, Direct>, 2>&) noexcept;
+    std::optional<std::tuple<QPointF, Direct>> getComponentNode(const std::tuple<std::array<Component*, 2>, std::array<Direct, 2>, std::array<QGraphicsLineItem*, 3>>&, int) noexcept;
+    std::list<std::tuple<std::array<Component*, 2>, std::array<Direct, 2>, std::array<QGraphicsLineItem*, 3>>> graphicsModules;
+    bool addEndLine{false};
 };
 
 #endif
