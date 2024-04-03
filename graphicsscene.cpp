@@ -101,7 +101,7 @@ void GraphicsScene::mouseMoveEvent(QGraphicsSceneMouseEvent *mouseEvent)
     return QGraphicsScene::mouseMoveEvent(mouseEvent);
 }
 
-std::optional<std::tuple<QPointF, Direct>> GraphicsScene::getComponentNode(const std::tuple<std::array<Component*, 2>, std::array<Direct, 2>, std::array<QGraphicsLineItem*, 3>> &graphicsModule, int index) noexcept
+constexpr std::optional<std::tuple<QPointF, Direct>> GraphicsScene::getComponentNode(const std::tuple<std::array<Component*, 2>, std::array<Direct, 2>, std::array<QGraphicsLineItem*, 3>> &graphicsModule, int index) noexcept
 {
     std::optional<std::tuple<QPointF, Direct>> result = std::nullopt;
     if (std::get<0>(graphicsModule).at(index) != nullptr) {

@@ -31,7 +31,7 @@ private:
     void targetMidY(std::array<QGraphicsLineItem*, 3>&, const std::array<QPointF, 2>&) noexcept;
     void leftRightHorizontal(Direct, const QPointF&) noexcept;
     void updateLines(std::tuple<std::array<Component*, 2>, std::array<Direct, 2>, std::array<QGraphicsLineItem*, 3>>&, const std::array<std::tuple<QPointF, Direct>, 2>&) noexcept;
-    std::optional<std::tuple<QPointF, Direct>> getComponentNode(const std::tuple<std::array<Component*, 2>, std::array<Direct, 2>, std::array<QGraphicsLineItem*, 3>>&, int) noexcept;
+    constexpr std::optional<std::tuple<QPointF, Direct>> getComponentNode(const std::tuple<std::array<Component*, 2>, std::array<Direct, 2>, std::array<QGraphicsLineItem*, 3>>&, int) noexcept;
     std::list<std::tuple<std::array<Component*, 2>, std::array<Direct, 2>, std::array<QGraphicsLineItem*, 3>>> graphicsModules;
     bool addEndLine{false};
 };
