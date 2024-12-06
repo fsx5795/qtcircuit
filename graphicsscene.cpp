@@ -1,3 +1,4 @@
+#include <cmath>
 #include <QGraphicsView>
 #include "graphicsscene.h"
 

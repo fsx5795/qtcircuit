@@ -1,6 +1,7 @@
 #ifndef GRAPHICSSCENE_H
 #define GRAPHICSSCENE_H
 
+#include <optional>
 #include <QGraphicsScene>
 #include <QGraphicsSceneMouseEvent>
 #include "component.h"
